@@ -42,18 +42,18 @@ htcoeff
             htcPtr = const_cast<volScalarField*>(&mesh().lookupObject<volScalarField>("htcoeff"));
         }
         volScalarField& htc = *htcPtr;
-	    const volScalarField& temp = mesh().lookupObject<volScalarField>("T");
+        const volScalarField& temp = mesh().lookupObject<volScalarField>("T");
         const volScalarField& wt = mesh().lookupObject<volScalarField>("wallHeatFlux");
-	    // Calculate only on selected walls where external flux is applied
-	    const volScalarField::Boundary& Tbf = temp.boundaryField();
-	    const volScalarField::Boundary& wtf = wt.boundaryField();
-	    volScalarField::Boundary& htcBf = htc.boundaryFieldRef();
+        // Calculate only on selected walls where external flux is applied
+        const volScalarField::Boundary& Tbf = temp.boundaryField();
+        const volScalarField::Boundary& wtf = wt.boundaryField();
+        volScalarField::Boundary& htcBf = htc.boundaryFieldRef();
         const scalar eps = rootVSmall;
-	    // Set Tref
-	    const scalar Tref = 298.15;
-	    label patchid = mesh().boundaryMesh().findIndex("pipeEntry");
+        // Set Tref
+        const scalar Tref = 298.15;
+        label patchid = mesh().boundaryMesh().findIndex("pipeEntry");
         htcBf[patchid] = wtf[patchid]/(Tbf[patchid] - Tref + eps);
-	    patchid = mesh().boundaryMesh().findIndex("pipeFullyDev");
+        patchid = mesh().boundaryMesh().findIndex("pipeFullyDev");
         htcBf[patchid] = wtf[patchid]/(Tbf[patchid] - Tref + eps);
     #};
 }
