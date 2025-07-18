@@ -4,7 +4,7 @@ A fundamental heat transfer study using both OpenFOAM ORG (v12) and COM (v2406) 
 - For a quick test, install the binary version of OpenFOAM v12 as instructed in https://openfoam.org/download/12-ubuntu/ .
 - COM version is here: https://www.openfoam.com/news/main-news/openfoam-v2406 .
 - Make sure that *pitzDailySteady* tutorial case is working.
-- Ubuntu 24.04 encourages users to create their own Python environment. How to: First, cd ~
+- Ubuntu 24.04 encourages users to create their own Python environment. How to: first, cd ~
 
   **sudo apt install python3-venv**
 
@@ -17,9 +17,9 @@ A fundamental heat transfer study using both OpenFOAM ORG (v12) and COM (v2406) 
   This will load ***.myenv*** Python environment automatically. To exit, just use ***deactivate*** command.
   
 - To test cases, execute ***run_all_parallel.sh*** script.
-- Change directory to ***plots***, and type ***python plot_logs_residual.py***. Study the results.
+- After the completion of the run, change directory to ***plots***, and type ***python plot_logs_residual.py***. Study the results.
 
-  Inputs of these two cases are identical. However, implementation differences between COM and ORG versions deviated significantly. ORG offers simplified function objects using ***#includeFunc*** keyword as well as traditional function objects. They were defined in ***system/monitor***. Not all function objects work as expected in terms of printing frequency, e.g., yPlus, wallHeatFlux. However, workaround is to use ***purgeWrite*** feature in ***system/controlDict***.
+  Inputs of these two cases are identical. However, we are going to see the impact of implementation differences between COM and ORG versions (Both versions are not really compatible with each other anymore). ORG offers simplified function objects using ***#includeFunc*** keyword as well as traditional function objects. They were defined in ***system/monitor***. Not all function objects work as expected in terms of printing frequency, e.g., yPlus, wallHeatFlux. However, workaround is to use ***purgeWrite*** feature in ***system/controlDict***.
 
     ORG version is not shipped with a proper heat transfer coefficient function object. Here author provides a coded function object implementation. This is different from the examples given in tutorials in terms of using object registry. A pointer is used to update ***htcoeff*** object saved in the registry and  its calculation is based on Newton's law of cooling (see details in ***htcoeff*** object in ***monitor*** file). Why do we need to register? Because, ***htcSurfAveEntry*** and ***htcSurfAveFullyDev*** objects in ***monitor*** need access to htcoeff object.
 
