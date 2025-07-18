@@ -64,19 +64,18 @@ htcCoded1
                 mesh(),
                 dimensionedScalar(dimMass/pow3(dimTime)/dimTemperature, Zero)
             );
-
 	    regIOobject::store(htcPtr);
         }
         auto& htc = *htcPtr;
         Info<< "Computing htc-coded field\n" << endl;
         const auto& temp = mesh().lookupObject<volScalarField>("T");
         const auto& wt = mesh().lookupObject<volScalarField>("wallHeatFlux");
-	    // Calculate only on selected walls where external flux is applied
+        // Calculate only on selected walls where external flux is applied
         const volScalarField::Boundary& Tbf = temp.boundaryField();
         const volScalarField::Boundary& wtf = wt.boundaryField();
         volScalarField::Boundary& htcBf = htc.boundaryFieldRef();
         const scalar eps = ROOTVSMALL;
-	    const scalar Tref = 298.15;
+        const scalar Tref = 298.15;
         // pipe entry
         label patchid = mesh().boundaryMesh().findPatchID("pipeEntry");
         htcBf[patchid] = wtf[patchid]/(Tbf[patchid] - Tref + eps);
