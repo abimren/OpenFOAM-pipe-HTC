@@ -1,0 +1,120 @@
+// -*- C++ -*-
+
+htc_Tref
+{
+    type            heatTransferCoeff;
+    libs            (fieldFunctionObjects);
+    field           T;
+    patches         (pipeEntry pipeFullyDev);
+    htcModel        fixedReferenceTemperature;
+    TRef            298.15;
+    writeControl    writeTime;
+    result          htcTref;
+}
+
+wallHeatFlux1
+{
+    // Mandatory entries
+    type            wallHeatFlux;
+    libs            (fieldFunctionObjects);
+
+    // Optional entries
+    patches         (pipeEntry pipeFullyDev);
+    qr              qr;
+
+    // Optional (inherited) entries
+    writePrecision  10;
+    writeToFile     true;
+    useUserTime     true;
+
+    region          region0;
+    enabled         true;
+    log             true;
+    timeStart       0;
+    timeEnd         1000;
+    executeControl  timeStep;
+    executeInterval 1;
+    writeControl    writeTime;
+    writeInterval   -1;
+}
+
+htcCoded1
+{
+    type            coded;
+    libs            (utilityFunctionObjects);
+    name            htcCoded;
+    writeControl    writeTime;
+    codeExecute
+    #{
+        auto* htcPtr = mesh().getObjectPtr<volScalarField>("htcCoded");
+        if (!htcPtr)
+        {
+            Info<< "Create HTC-coded  field" << nl;
+            htcPtr = new volScalarField
+            (
+                IOobject
+                (
+                    "htcCoded",
+                    mesh().time().timeName(),
+                    mesh(),
+                    IOobject::NO_READ,
+                    IOobject::AUTO_WRITE,
+                    IOobject::REGISTER
+                ),
+                mesh(),
+                dimensionedScalar(dimMass/pow3(dimTime)/dimTemperature, Zero)
+            );
+
+	    regIOobject::store(htcPtr);
+        }
+        auto& htc = *htcPtr;
+        Info<< "Computing htc-coded field\n" << endl;
+        const auto& temp = mesh().lookupObject<volScalarField>("T");
+        const auto& wt = mesh().lookupObject<volScalarField>("wallHeatFlux");
+	    // Calculate only on selected walls where external flux is applied
+        const volScalarField::Boundary& Tbf = temp.boundaryField();
+        const volScalarField::Boundary& wtf = wt.boundaryField();
+        volScalarField::Boundary& htcBf = htc.boundaryFieldRef();
+        const scalar eps = ROOTVSMALL;
+	    const scalar Tref = 298.15;
+        // pipe entry
+        label patchid = mesh().boundaryMesh().findPatchID("pipeEntry");
+        htcBf[patchid] = wtf[patchid]/(Tbf[patchid] - Tref + eps);
+        patchid = mesh().boundaryMesh().findPatchID("pipeFullyDev");
+        htcBf[patchid] = wtf[patchid]/(Tbf[patchid] - Tref + eps);
+    #};
+}
+
+htcSurfAve
+{
+    type            surfaceFieldValue;
+    libs            (fieldFunctionObjects);
+    writeControl    timeStep;
+    log             true;
+    writeFields     false;
+    regionType      patch;
+    name            pipeFullyDev;
+    operation       areaAverage;
+    fields
+    (
+        htcTref htcCoded T
+    );
+}
+
+ToutAve
+{
+    type            surfaceFieldValue;
+    libs            (fieldFunctionObjects);
+    writeControl    timeStep;
+    log             true;
+    writeFields     false;
+    regionType      patch;
+    name            outlet;
+    operation       areaAverage;
+    fields
+    (
+        T
+    );
+}
+
+// ************************************************************************* //
