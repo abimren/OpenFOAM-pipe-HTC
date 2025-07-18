@@ -1,0 +1,101 @@
+// -*- C++ -*-
+#includeFunc residuals(name=residuals, U, p)
+#includeFunc cellMin(name=minP, p, log=true)
+#includeFunc cellMax(name=maxP, p, log=true)
+#includeFunc cellMinMag(name=minU, U, log=true)
+#includeFunc cellMaxMag(name=maxU, U, log=true)
+#includeFunc yPlus
+#includeFunc patchFlowRate(name=massFlowIn, patch=inlet, log=true)
+#includeFunc patchFlowRate(name=massFlowOut, patch=outlet, log=true)
+#includeFunc patchDifference(name=dP, patch1=inlet, patch2=outlet, p, log=true)
+#includeFunc wallHeatFlux
+
+htcoeff
+{
+    type            coded;
+    libs            ("libutilityFunctionObjects.so");
+    name            htcoeff;
+    writeControl    writeTime;
+    codeWrite
+    #{
+        volScalarField* htcPtr = nullptr;
+        if(!mesh().foundObject<volScalarField>("htcoeff"))
+        {
+            Info<<"Creating htcoeff field"<<endl;
+            htcPtr = new volScalarField
+            (
+                IOobject
+                (
+                    "htcoeff",
+                    mesh().time().name(),
+                    mesh(),
+                    IOobject::NO_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                mesh(),
+                dimensionedScalar(dimMass/pow3(dimTime)/dimTemperature, Zero)
+            );
+            regIOobject::store(htcPtr);
+        }
+        else
+        {
+            htcPtr = const_cast<volScalarField*>(&mesh().lookupObject<volScalarField>("htcoeff"));
+        }
+        volScalarField& htc = *htcPtr;
+	    const volScalarField& temp = mesh().lookupObject<volScalarField>("T");
+        const volScalarField& wt = mesh().lookupObject<volScalarField>("wallHeatFlux");
+	    // Calculate only on selected walls where external flux is applied
+	    const volScalarField::Boundary& Tbf = temp.boundaryField();
+	    const volScalarField::Boundary& wtf = wt.boundaryField();
+	    volScalarField::Boundary& htcBf = htc.boundaryFieldRef();
+        const scalar eps = rootVSmall;
+	    // Set Tref
+	    const scalar Tref = 298.15;
+	    label patchid = mesh().boundaryMesh().findIndex("pipeEntry");
+        htcBf[patchid] = wtf[patchid]/(Tbf[patchid] - Tref + eps);
+	    patchid = mesh().boundaryMesh().findIndex("pipeFullyDev");
+        htcBf[patchid] = wtf[patchid]/(Tbf[patchid] - Tref + eps);
+    #};
+}
+
+htcSurfAveEntry
+{
+    type            surfaceFieldValue;
+    libs            ( "libfieldFunctionObjects.so" );
+    writeControl    writeTime;
+    log             true;
+    writeFields     false;
+    region          region0;
+    select          patch;
+    patch           pipeEntry;
+    operation       areaAverage;
+    fields          ( htcoeff T );
+}
+
+htcSurfAveFullyDev
+{
+    type            surfaceFieldValue;
+    libs            ( "libfieldFunctionObjects.so" );
+    writeControl    writeTime;
+    log             true;
+    writeFields     false;
+    select          patch;
+    name            pipeFullyDev;
+    operation       areaAverage;
+    fields          ( htcoeff T );
+}
+
+ToutAve
+{
+    type            surfaceFieldValue;
+    libs            ( "libfieldFunctionObjects.so" );
+    writeControl    timeStep;//writeTime;
+    log             true;
+    writeFields     false;
+    select          patch;
+    name            outlet;
+    operation       areaAverage;
+    fields          ( T );
+}
+
+// ************************************************************************* //
