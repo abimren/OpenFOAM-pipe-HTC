@@ -39,4 +39,5 @@ It is seen that ***Uy*** and ***p*** did not converge to the target ***residualC
 
 ***Uy*** and ***p*** converged fast and did not stall. This plot is also different from the figure in slide 5 of **Pipe_turbulent_flow_heat_transfer_CFD_analysis.pdf**. In that figure, there is, again, convergence but it takes longer. Because, in that case, SIMPLE algorithm was used. To enable, one should set ***consistent no*** and use SIMPLE recommended ***relaxationFactors***. However, for this case, SIMPLEC performed better.
 
-In **Pipe_turbulent_flow_heat_transfer_CFD_analysis.pdf**, there are also some important notes on yPlus and turbulence model selection. Hope you find this useful.  
+In **Pipe_turbulent_flow_heat_transfer_CFD_analysis.pdf**, there are also some important notes on yPlus and turbulence model selection. This fundamental case examines not only 
+velocity wall functions but also those for thermal. Hope you find this useful.  
